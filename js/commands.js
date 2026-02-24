@@ -7,7 +7,7 @@ window.commandHandlers = {
   source: () => `\n[SOURCE]\nBuilt as a static terminal interface for Mirror.\nPrimary source material: PHILOSOPHY.md + ORIGINAL_CONTEXT.md by @lagonraj\n`,
   signal: () => {
     window.terminal.state.awaitingEmail = true;
-    return `\n[SIGNAL CHANNEL]\n\n  frequency: 1x / week\n  payload:   collapse / emergence / action\n\nEnter email to subscribe:\nsignal:~$ `;
+    return `\n[SIGNAL CHANNEL]\n\n  frequency: 1x / week\n  payload:   collapse / emergence / action\n\nEnter email to subscribe (or run any command to cancel):\nemail:~$ `;
   },
   clear: () => {
     window.terminal.clear();
