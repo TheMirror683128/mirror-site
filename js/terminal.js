@@ -78,17 +78,27 @@ window.terminal = {
     this.state.history.push(cmd);
     this.state.idx = this.state.history.length;
 
-    if (this.state.awaitingEmail) {
-      this.state.awaitingEmail = false;
-      await this.animateSwap(async () => {
-        this.promptEcho(cmd);
-        await this.streamLine(`> SIGNAL LOCKED: ${cmd}`, "system");
-        await this.streamLine("> First transmission arrives this week.", "system");
-      });
-      return;
-    }
-
     const lc = cmd.toLowerCase();
+    const isCommandLike =
+      lc === "clear" ||
+      lc === "rm -rf /" ||
+      lc.startsWith("open ") ||
+      ["whoami", "sudo", "exit", "matrix", "rabbit", "ls", "ping"].includes(lc) ||
+      !!window.commandHandlers[lc];
+
+    if (this.state.awaitingEmail) {
+      if (isCommandLike) {
+        this.state.awaitingEmail = false;
+      } else {
+        this.state.awaitingEmail = false;
+        await this.animateSwap(async () => {
+          this.promptEcho(cmd);
+          await this.streamLine(`> SIGNAL LOCKED: ${cmd}`, "system");
+          await this.streamLine("> First transmission arrives this week.", "system");
+        });
+        return;
+      }
+    }
 
     if (lc === "clear") {
       this.clear();
