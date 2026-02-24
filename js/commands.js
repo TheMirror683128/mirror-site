@@ -4,7 +4,7 @@ window.commandHandlers = {
   notes: () => window.NOTES_CONTENT.index,
   essays: () => window.ESSAYS_CONTENT.index,
   about: () => window.ABOUT_TEXT,
-  source: () => `\n[SOURCE]\nBuilt as a static terminal interface for Mirror.\nPrimary source material: PHILOSOPHY.md + ORIGINAL_CONTEXT.md\n`,
+  source: () => `\n[SOURCE]\nBuilt as a static terminal interface for Mirror.\nPrimary source material: PHILOSOPHY.md + ORIGINAL_CONTEXT.md by @lagonraj\n`,
   signal: () => {
     window.terminal.state.awaitingEmail = true;
     return `\n[SIGNAL CHANNEL]\n\n  frequency: 1x / week\n  payload:   collapse / emergence / action\n\nEnter email to subscribe:\nsignal:~$ `;
