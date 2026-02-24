@@ -184,6 +184,14 @@ window.terminal = {
     });
 
     document.addEventListener("click", () => this.input.focus());
+
+    const focusInput = () => this.input.focus({ preventScroll: true });
+    requestAnimationFrame(focusInput);
+    setTimeout(focusInput, 120);
+    window.addEventListener("pageshow", focusInput);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") focusInput();
+    });
   }
 };
 window.terminal.bind();
