@@ -1,0 +1,111 @@
+:root {
+  --bg: #000000;
+  --green: #00ff41;
+  --green-dim: #00cc33;
+  --green-faint: #0a3d0a;
+  --amber: #ffb000;
+  --red: #ff3b3b;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--green);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+#app {
+  min-height: 100vh;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 40px 24px 140px;
+  position: relative;
+}
+#app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 65%, rgba(0,0,0,0.24) 100%);
+}
+#app.crt-on::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(0,0,0,0.09) 50%, rgba(0,0,0,0.02) 50%);
+  background-size: 100% 2px;
+  mix-blend-mode: multiply;
+}
+#terminal { white-space: pre-wrap; text-shadow: 0 0 6px rgba(0,255,65,0.34); }
+#terminal.transition-out { animation: terminalOut 200ms ease forwards; }
+#terminal.transition-in { animation: terminalIn 220ms ease; }
+@keyframes terminalOut {
+  to { opacity: 0; transform: translateY(-10px); filter: blur(1px); }
+}
+@keyframes terminalIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.line { margin: 0 0 2px 0; }
+.system { color: var(--amber); }
+.error { color: var(--red); }
+.dim { color: var(--green-dim); }
+.divider { color: var(--green-dim); }
+.prompt { color: var(--green); }
+#input-wrap {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: min(860px, 100%);
+  background: linear-gradient(to top, rgba(0,0,0,0.97), rgba(0,0,0,0.84), transparent);
+  padding: 12px 24px 16px;
+}
+#prompt-line { display: flex; align-items: center; }
+#cmd-input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  color: var(--green);
+  font: inherit;
+  outline: none;
+  caret-color: transparent;
+  text-shadow: 0 0 6px rgba(0,255,65,0.34);
+}
+#chips {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#chips button {
+  background: transparent;
+  border: 1px solid var(--green-faint);
+  color: var(--green-dim);
+  padding: 3px 9px;
+  font: inherit;
+  cursor: pointer;
+}
+#chips button:hover, #chips button:focus { border-color: var(--green); color: var(--green); }
+.cursor { animation: blink 530ms steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+@media (max-width: 700px) {
+  body { font-size: 15px; }
+  #app { padding: 24px 16px 150px; }
+  #app.crt-on::after { display: none; }
+  #input-wrap { padding: 10px 16px 14px; }
+}

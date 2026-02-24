@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mirror — Structural Signal in a Noisy World</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/terminal.css" />
+  </head>
+  <body>
+    <main id="app" class="crt-on">
+      <section id="terminal" aria-live="polite" aria-label="Terminal output"></section>
+
+      <section id="input-wrap">
+        <label for="cmd-input" class="sr-only">Terminal command input</label>
+        <div id="prompt-line"><span class="prompt">mirror:~$ </span><input id="cmd-input" autocomplete="off" spellcheck="false" /></div>
+        <div id="chips" role="toolbar" aria-label="Quick commands">
+          <button data-cmd="help">help</button>
+          <button data-cmd="start">start</button>
+          <button data-cmd="notes">notes</button>
+          <button data-cmd="essays">essays</button>
+          <button data-cmd="signal">signal</button>
+          <button data-cmd="about">about</button>
+          <button data-cmd="clear">clear</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="content/start.js"></script>
+    <script src="content/notes.js"></script>
+    <script src="content/essays.js"></script>
+    <script src="content/about.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/commands.js"></script>
+    <script src="js/terminal.js"></script>
+    <script src="js/boot.js"></script>
+  </body>
+</html>
