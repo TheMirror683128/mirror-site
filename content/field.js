@@ -252,10 +252,19 @@ window.PRF_VISUALIZER = (() => {
 
       const resizeCanvas = () => {
         const container = document.getElementById('prf-canvas-container');
-        state.w = Math.max(400, container.clientWidth - 60);
-        state.h = Math.max(300, container.clientHeight - 120);
-        canvas.width = state.w;
-        canvas.height = state.h;
+        const w = Math.max(400, Math.min(container.clientWidth - 60, 1200));
+        const h = Math.max(300, Math.min(container.clientHeight - 120, 700));
+        
+        state.w = w;
+        state.h = h;
+        
+        // Set internal resolution (drawing surface)
+        canvas.width = w;
+        canvas.height = h;
+        
+        // Set CSS display size
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
       };
       resizeCanvas();
       window.addEventListener('resize', resizeCanvas);

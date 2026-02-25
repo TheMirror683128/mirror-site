@@ -184,6 +184,7 @@ body {
 #prf-canvas {
   border: 1px solid var(--green);
   box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+  display: block;
 }
 #prf-info {
   position: absolute;
