@@ -109,3 +109,102 @@ body {
   #app.crt-on::after { display: none; }
   #input-wrap { padding: 10px 16px 14px; }
 }
+
+/* Visualizer Modal */
+#visualizer-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  flex-direction: column;
+}
+#visualizer-modal.show {
+  display: flex;
+}
+#prf-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--green);
+  background: rgba(0, 255, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#prf-header h2 {
+  margin: 0;
+  font-size: 18px;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+#prf-close {
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+#prf-close:hover {
+  background: var(--green);
+  color: #000;
+}
+#prf-controls {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--green-faint);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.prf-mode-btn {
+  background: transparent;
+  border: 1px solid var(--green-faint);
+  color: var(--green-dim);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+.prf-mode-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+.prf-mode-btn.active {
+  background: var(--green);
+  color: #000;
+}
+#prf-canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 20px;
+}
+#prf-canvas {
+  border: 1px solid var(--green);
+  box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+}
+#prf-info {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid var(--green);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 600px;
+}
+#prf-stats {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  color: #0ff;
+}

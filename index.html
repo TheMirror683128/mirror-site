@@ -25,15 +25,39 @@
           <button data-cmd="notes">notes</button>
           <button data-cmd="essays">essays</button>
           <button data-cmd="about">about</button>
+          <button data-cmd="field">field</button>
           <button data-cmd="clear">clear</button>
         </div>
       </section>
     </main>
 
+    <!-- Visualizer Modal -->
+    <div id="visualizer-modal">
+      <div id="prf-header">
+        <h2>The Probability Field</h2>
+        <button id="prf-close">close [esc]</button>
+      </div>
+      <div id="prf-controls">
+        <button class="prf-mode-btn active" data-mode="field">field state</button>
+        <button class="prf-mode-btn" data-mode="density">density collapse</button>
+        <button class="prf-mode-btn" data-mode="fragmentation">fragmentation</button>
+        <button class="prf-mode-btn" data-mode="delay">tech/ontology delay</button>
+        <button class="prf-mode-btn" data-mode="amplification">amplification</button>
+        <button class="prf-mode-btn" data-mode="collapse">civilization spiral</button>
+        <button id="prf-reset" style="margin-left: auto;">reset</button>
+      </div>
+      <div id="prf-canvas-container">
+        <canvas id="prf-canvas"></canvas>
+        <div id="prf-info"></div>
+        <div id="prf-stats"></div>
+      </div>
+    </div>
+
     <script src="content/start.js"></script>
     <script src="content/notes.js"></script>
     <script src="content/essays.js"></script>
     <script src="content/about.js"></script>
+    <script src="content/field.js"></script>
     <script src="js/effects.js"></script>
     <script src="js/commands.js"></script>
     <script src="js/terminal.js"></script>
