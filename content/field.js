@@ -1,15 +1,37 @@
+let visualizerRunning = false;
+let animationFrameId = null;
+
 window.initVisualizer = () => {
+  if (visualizerRunning) return; // Prevent duplicate initialization
+  visualizerRunning = true;
+
   const modal = document.getElementById('visualizer-modal');
   const canvas = document.getElementById('prf-canvas');
+  if (!canvas) {
+    console.error('Canvas element not found');
+    return;
+  }
+  
   const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.error('Canvas context failed');
+    return;
+  }
+  
   const info = document.getElementById('prf-info');
   const stats = document.getElementById('prf-stats');
   
   // Set canvas size
   function resizeCanvas() {
     const container = document.getElementById('prf-canvas-container');
-    canvas.width = Math.min(container.clientWidth - 40, 1000);
-    canvas.height = Math.min(container.clientHeight - 40, 700);
+    if (!container) {
+      console.error('Canvas container not found');
+      return;
+    }
+    const w = Math.max(400, Math.min(container.clientWidth - 40, 1000));
+    const h = Math.max(300, Math.min(container.clientHeight - 40, 700));
+    canvas.width = w;
+    canvas.height = h;
   }
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
@@ -386,11 +408,18 @@ window.initVisualizer = () => {
     updateStats();
 
     time++;
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(animate);
   };
 
   // Event listeners
-  document.querySelectorAll('.prf-mode-btn').forEach(btn => {
+  const buttons = document.querySelectorAll('.prf-mode-btn');
+  if (buttons.length === 0) {
+    console.error('Mode buttons not found');
+    visualizerRunning = false;
+    return;
+  }
+  
+  buttons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       document.querySelectorAll('.prf-mode-btn').forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
@@ -416,15 +445,20 @@ window.initVisualizer = () => {
   animate();
 
   // Modal controls
-  document.getElementById('prf-close').addEventListener('click', () => {
+  const closeBtn = document.getElementById('prf-close');
+  const closeVisualizerListener = () => {
     modal.classList.remove('show');
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    visualizerRunning = false;
     window.terminal.input.focus();
-  });
+  };
+  
+  if (closeBtn) closeBtn.addEventListener('click', closeVisualizerListener);
 
-  window.addEventListener('keydown', (e) => {
+  const escapeListener = (e) => {
     if (e.key === 'Escape' && modal.classList.contains('show')) {
-      modal.classList.remove('show');
-      window.terminal.input.focus();
+      closeVisualizerListener();
     }
-  });
+  };
+  window.addEventListener('keydown', escapeListener);
 };
