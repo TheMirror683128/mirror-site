@@ -1,134 +1,57 @@
-let visualizerRunning = false;
-let animationFrameId = null;
+window.PRF_VISUALIZER = (() => {
+  let animationId = null;
+  let isRunning = false;
 
-window.initVisualizer = () => {
-  if (visualizerRunning) return; // Prevent duplicate initialization
-  visualizerRunning = true;
-
-  const modal = document.getElementById('visualizer-modal');
-  const canvas = document.getElementById('prf-canvas');
-  if (!canvas) {
-    console.error('Canvas element not found');
-    return;
-  }
-  
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    console.error('Canvas context failed');
-    return;
-  }
-  
-  const info = document.getElementById('prf-info');
-  const stats = document.getElementById('prf-stats');
-  
-  // Set canvas size
-  function resizeCanvas() {
-    const container = document.getElementById('prf-canvas-container');
-    if (!container) {
-      console.error('Canvas container not found');
-      return;
-    }
-    const w = Math.max(400, Math.min(container.clientWidth - 40, 1000));
-    const h = Math.max(300, Math.min(container.clientHeight - 40, 700));
-    canvas.width = w;
-    canvas.height = h;
-  }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
-
-  // Simulation state
-  let mode = 'field';
-  let time = 0;
-  let particles = [];
-  let attractors = [];
-  let entropy = 0;
-  let density = 0;
-  let fragmentation = 0;
-  let techLevel = 0;
-  let ontologyLevel = 0;
-  let delay = 0;
-  let amplification = 1;
-  let collapseEvents = [];
-
-  // Particle class
-  class Particle {
+  const Particle = class {
     constructor(x, y, type = 'potential') {
       this.x = x;
       this.y = y;
       this.vx = (Math.random() - 0.5) * 2;
       this.vy = (Math.random() - 0.5) * 2;
       this.type = type;
-      this.mass = Math.random() * 2 + 1;
       this.age = 0;
       this.decay = Math.random() * 0.02;
     }
-
-    update() {
+    update(attractors, width, height) {
       this.vx += (Math.random() - 0.5) * 0.1;
       this.vy += (Math.random() - 0.5) * 0.1;
       
-      attractors.forEach(attractor => {
-        const dx = attractor.x - this.x;
-        const dy = attractor.y - this.y;
+      attractors.forEach(a => {
+        const dx = a.x - this.x;
+        const dy = a.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy) + 1;
-        const force = attractor.strength / (dist * dist);
+        const force = a.strength / (dist * dist);
         this.vx += (dx / dist) * force * 0.1;
         this.vy += (dy / dist) * force * 0.1;
       });
 
       this.vx *= 0.98;
       this.vy *= 0.98;
-
       this.x += this.vx;
       this.y += this.vy;
 
-      if (this.x < 0) this.x = canvas.width;
-      if (this.x > canvas.width) this.x = 0;
-      if (this.y < 0) this.y = canvas.height;
-      if (this.y > canvas.height) this.y = 0;
-
+      if (this.x < 0) this.x = width;
+      if (this.x > width) this.x = 0;
+      if (this.y < 0) this.y = height;
+      if (this.y > height) this.y = 0;
       this.age += this.decay;
     }
-
-    draw() {
-      ctx.save();
-      
-      let alpha = Math.max(0, 1 - this.age);
+    draw(ctx) {
+      const alpha = Math.max(0, 1 - this.age);
       let color, size;
-
       switch(this.type) {
-        case 'potential':
-          color = `rgba(0, 255, 0, ${alpha * 0.3})`;
-          size = 2;
-          break;
-        case 'collapsed':
-          color = `rgba(0, 255, 255, ${alpha * 0.8})`;
-          size = 4;
-          break;
-        case 'fragment':
-          color = `rgba(255, 0, 0, ${alpha * 0.6})`;
-          size = 3;
-          break;
+        case 'collapsed': color = `rgba(0,255,255,${alpha*0.8})`; size = 4; break;
+        case 'fragment': color = `rgba(255,0,0,${alpha*0.6})`; size = 3; break;
+        default: color = `rgba(0,255,0,${alpha*0.3})`; size = 2;
       }
-
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
       ctx.fill();
-
-      if (this.type === 'collapsed') {
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = color;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
-
-      ctx.restore();
     }
-  }
+  };
 
-  // Attractor class
-  class Attractor {
+  const Attractor = class {
     constructor(x, y, strength, label = '') {
       this.x = x;
       this.y = y;
@@ -136,329 +59,296 @@ window.initVisualizer = () => {
       this.label = label;
       this.radius = Math.sqrt(strength) * 10;
     }
-
-    draw() {
-      ctx.save();
-      
-      const gradient = ctx.createRadialGradient(
-        this.x, this.y, 0,
-        this.x, this.y, this.radius
-      );
-      gradient.addColorStop(0, 'rgba(0, 255, 255, 0.3)');
-      gradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
-      
+    draw(ctx) {
+      const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+      gradient.addColorStop(0, 'rgba(0,255,255,0.3)');
+      gradient.addColorStop(1, 'rgba(0,255,255,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
-
       ctx.strokeStyle = '#0ff';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
       ctx.stroke();
-
       if (this.label) {
         ctx.fillStyle = '#0ff';
         ctx.font = '11px Courier New';
         ctx.fillText(this.label, this.x + 12, this.y + 4);
       }
-
-      ctx.restore();
     }
-  }
+  };
 
-  // Mode configurations
   const modes = {
     field: {
-      desc: 'Base state: The Probability Field. Particles represent potential outcomes drifting under entropic pressure.',
-      init: () => {
-        particles = [];
-        attractors = [];
+      init(state) {
+        state.particles = [];
+        state.attractors = [];
         for (let i = 0; i < 200; i++) {
-          particles.push(new Particle(
-            Math.random() * canvas.width,
-            Math.random() * canvas.height
-          ));
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
-      update: () => {
-        particles.forEach(p => p.update());
-        particles = particles.filter(p => p.age < 1);
-        
+      update(state) {
+        state.particles.forEach(p => p.update(state.attractors, state.w, state.h));
+        state.particles = state.particles.filter(p => p.age < 1);
         if (Math.random() < 0.3) {
-          particles.push(new Particle(
-            Math.random() * canvas.width,
-            Math.random() * canvas.height
-          ));
-        }
-
-        entropy = particles.length / 300;
-        density = 0;
-      }
-    },
-    
-    density: {
-      desc: 'Density accumulation: Click to create attractors. Watch how potential collapses into reality around concentrated mass.',
-      init: () => {
-        particles = [];
-        attractors = [];
-        for (let i = 0; i < 300; i++) {
-          particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
-      update: () => {
-        particles.forEach(p => {
-          p.update();
-          if (attractors.some(a => {
-            const dist = Math.hypot(p.x - a.x, p.y - a.y);
-            return dist < a.radius * 0.3;
-          })) {
-            p.type = 'collapsed';
-          }
-        });
-        particles = particles.filter(p => p.age < 1);
-        density = particles.filter(p => p.type === 'collapsed').length / particles.length || 0;
-      }
+      desc: 'Base state: Probability Field. Particles drift under entropic pressure.'
     },
-
+    density: {
+      init(state) {
+        state.particles = [];
+        state.attractors = [];
+        for (let i = 0; i < 300; i++) {
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
+        }
+      },
+      update(state) {
+        state.particles.forEach(p => {
+          p.update(state.attractors, state.w, state.h);
+          state.attractors.forEach(a => {
+            if (Math.hypot(p.x - a.x, p.y - a.y) < a.radius * 0.3) p.type = 'collapsed';
+          });
+        });
+        state.particles = state.particles.filter(p => p.age < 1);
+      },
+      desc: 'Click to create attractors. Watch potential collapse into reality.'
+    },
     fragmentation: {
-      desc: 'Competing attractors: Density split across incompatible basins. Particles caught between forces.',
-      init: () => {
-        particles = [];
-        attractors = [
-          new Attractor(canvas.width * 0.35, canvas.height * 0.5, 3, 'A'),
-          new Attractor(canvas.width * 0.65, canvas.height * 0.5, 3, 'B')
+      init(state) {
+        state.particles = [];
+        state.attractors = [
+          new Attractor(state.w * 0.35, state.h * 0.5, 3, 'A'),
+          new Attractor(state.w * 0.65, state.h * 0.5, 3, 'B')
         ];
         for (let i = 0; i < 300; i++) {
-          particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
-      update: () => {
-        particles.forEach(p => {
-          p.update();
-          const distA = Math.hypot(p.x - attractors[0].x, p.y - attractors[0].y);
-          const distB = Math.hypot(p.x - attractors[1].x, p.y - attractors[1].y);
-          
-          if (distA < attractors[0].radius * 0.3) {
-            p.type = 'collapsed';
-          } else if (distB < attractors[1].radius * 0.3) {
-            p.type = 'collapsed';
-          } else if (distA < attractors[0].radius && distB < attractors[1].radius) {
-            p.type = 'fragment';
-          }
+      update(state) {
+        state.particles.forEach(p => {
+          p.update(state.attractors, state.w, state.h);
+          const d0 = Math.hypot(p.x - state.attractors[0].x, p.y - state.attractors[0].y);
+          const d1 = Math.hypot(p.x - state.attractors[1].x, p.y - state.attractors[1].y);
+          if (d0 < state.attractors[0].radius * 0.3) p.type = 'collapsed';
+          else if (d1 < state.attractors[1].radius * 0.3) p.type = 'collapsed';
+          else if (d0 < state.attractors[0].radius && d1 < state.attractors[1].radius) p.type = 'fragment';
         });
-        particles = particles.filter(p => p.age < 1);
-        fragmentation = particles.filter(p => p.type === 'fragment').length / particles.length || 0;
-      }
+        state.particles = state.particles.filter(p => p.age < 1);
+      },
+      desc: 'Multiple attractors: density split across incompatible basins.'
     },
-
     delay: {
-      desc: 'Tech/Ontology Delay: Exponential tech growth vs linear ontology. The gap = instability.',
-      init: () => {
-        particles = [];
-        attractors = [];
-        techLevel = 1;
-        ontologyLevel = 1;
+      init(state) {
+        state.particles = [];
+        state.attractors = [];
+        state.tech = 1;
+        state.ontology = 1;
         for (let i = 0; i < 200; i++) {
-          particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, 'potential'));
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
-      update: () => {
-        techLevel *= 1.05;
-        ontologyLevel += 0.15;
-        delay = Math.max(0, techLevel - ontologyLevel);
-
-        particles.forEach(p => {
-          p.vx += (Math.random() - 0.5) * (delay * 0.05);
-          p.vy += (Math.random() - 0.5) * (delay * 0.05);
-          p.update();
+      update(state) {
+        state.tech *= 1.05;
+        state.ontology += 0.15;
+        const gap = Math.max(0, state.tech - state.ontology);
+        state.particles.forEach(p => {
+          p.vx += (Math.random() - 0.5) * (gap * 0.05);
+          p.vy += (Math.random() - 0.5) * (gap * 0.05);
+          p.update(state.attractors, state.w, state.h);
         });
-        particles = particles.filter(p => p.age < 1);
-
+        state.particles = state.particles.filter(p => p.age < 1);
         if (Math.random() < 0.3) {
-          particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, 'potential'));
-        }
-
-        entropy = delay / 50;
-      }
-    },
-
-    amplification: {
-      desc: 'Amplification sequence: Language → Internet → AI. Each era compounds the previous.',
-      init: () => {
-        particles = [];
-        attractors = [new Attractor(canvas.width / 2, canvas.height / 2, 2, 'Signal')];
-        amplification = 1;
-        for (let i = 0; i < 300; i++) {
-          particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, 'potential'));
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
-      update: () => {
-        amplification *= 1.02;
-        attractors[0].strength = 2 + amplification * 0.5;
-        attractors[0].radius = Math.sqrt(attractors[0].strength) * 10;
-
-        particles.forEach(p => {
-          p.update();
-          const dist = Math.hypot(p.x - attractors[0].x, p.y - attractors[0].y);
-          if (dist < attractors[0].radius * 0.3) {
+      desc: 'Tech grows exponentially, ontology linearly. The gap = instability.'
+    },
+    amplification: {
+      init(state) {
+        state.particles = [];
+        state.attractors = [new Attractor(state.w / 2, state.h / 2, 2, 'Signal')];
+        state.amp = 1;
+        for (let i = 0; i < 300; i++) {
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
+        }
+      },
+      update(state) {
+        state.amp *= 1.02;
+        state.attractors[0].strength = 2 + state.amp * 0.5;
+        state.attractors[0].radius = Math.sqrt(state.attractors[0].strength) * 10;
+        state.particles.forEach(p => {
+          p.update(state.attractors, state.w, state.h);
+          if (Math.hypot(p.x - state.attractors[0].x, p.y - state.attractors[0].y) < state.attractors[0].radius * 0.3) {
             p.type = 'collapsed';
           }
         });
-        particles = particles.filter(p => p.age < 1);
-
+        state.particles = state.particles.filter(p => p.age < 1);
         if (Math.random() < 0.2) {
-          particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, 'potential'));
-        }
-
-        density = particles.filter(p => p.type === 'collapsed').length / particles.length || 0;
-      }
-    },
-
-    collapse: {
-      desc: 'Civilizational collapse: Entropy, fragmentation, and delay all running together.',
-      init: () => {
-        particles = [];
-        attractors = [new Attractor(canvas.width / 2, canvas.height / 2, 5, 'Civilization')];
-        entropy = 0.2;
-        fragmentation = 0;
-        delay = 0;
-        for (let i = 0; i < 400; i++) {
-          particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, 'collapsed'));
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
-      update: () => {
-        entropy *= 1.01;
-        delay *= 1.02;
-        delay += 0.1;
-        fragmentation = Math.min(1, fragmentation + 0.002);
-
-        particles.forEach(p => {
-          p.vx += (Math.random() - 0.5) * entropy;
-          p.vy += (Math.random() - 0.5) * entropy;
+      desc: 'Language → Internet → AI. Each era amplifies the previous.'
+    },
+    collapse: {
+      init(state) {
+        state.particles = [];
+        state.attractors = [new Attractor(state.w / 2, state.h / 2, 5, 'System')];
+        state.entropy = 0.2;
+        state.frag = 0;
+        state.delay = 0;
+        for (let i = 0; i < 400; i++) {
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h, 'collapsed'));
+        }
+      },
+      update(state) {
+        state.entropy *= 1.01;
+        state.delay = (state.delay || 0) * 1.02 + 0.1;
+        state.frag = Math.min(1, (state.frag || 0) + 0.002);
+        state.particles.forEach(p => {
+          p.vx += (Math.random() - 0.5) * state.entropy;
+          p.vy += (Math.random() - 0.5) * state.entropy;
           p.decay *= 1.001;
-          p.update();
-
-          const distToCenter = Math.hypot(p.x - attractors[0].x, p.y - attractors[0].y);
-          if (distToCenter > attractors[0].radius * 0.8 || Math.random() < fragmentation * 0.1) {
+          p.update(state.attractors, state.w, state.h);
+          if (Math.hypot(p.x - state.attractors[0].x, p.y - state.attractors[0].y) > state.attractors[0].radius * 0.8) {
             p.type = 'fragment';
           }
         });
+        state.particles = state.particles.filter(p => p.age < 1.5);
+      },
+      desc: 'Full collapse: entropy, fragmentation, and delay running together.'
+    }
+  };
 
-        particles = particles.filter(p => p.age < 1.5);
+  return {
+    open() {
+      if (isRunning) return;
+      isRunning = true;
 
-        if (Math.random() < 0.1) {
-          particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, 'fragment'));
-        }
+      const modal = document.getElementById('visualizer-modal');
+      const canvas = document.getElementById('prf-canvas');
+      const info = document.getElementById('prf-info');
+      const stats = document.getElementById('prf-stats');
+
+      if (!modal || !canvas) {
+        console.error('Modal or canvas not found');
+        return;
       }
+
+      modal.classList.add('show');
+
+      const ctx = canvas.getContext('2d');
+      const state = {
+        mode: 'field',
+        particles: [],
+        attractors: [],
+        w: 800,
+        h: 500,
+        time: 0
+      };
+
+      const resizeCanvas = () => {
+        const container = document.getElementById('prf-canvas-container');
+        state.w = Math.max(400, container.clientWidth - 60);
+        state.h = Math.max(300, container.clientHeight - 120);
+        canvas.width = state.w;
+        canvas.height = state.h;
+      };
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      modes[state.mode].init(state);
+
+      const switchMode = (m) => {
+        state.mode = m;
+        state.particles = [];
+        state.attractors = [];
+        modes[m].init(state);
+        if (info) info.textContent = modes[m].desc;
+      };
+
+      const updateStats = () => {
+        if (!stats) return;
+        const modeStats = {
+          field: `particles: ${state.particles.length}`,
+          density: `density: ${((state.particles.filter(p => p.type === 'collapsed').length / state.particles.length) * 100).toFixed(1)}%`,
+          fragmentation: `particles: ${state.particles.length}`,
+          delay: `tech: ${(state.tech || 0).toFixed(1)} | ontology: ${(state.ontology || 0).toFixed(1)}`,
+          amplification: `amp: ${(state.amp || 1).toFixed(2)}x`,
+          collapse: `entropy: ${(state.entropy || 0).toFixed(2)}`
+        };
+        stats.textContent = modeStats[state.mode] || '';
+      };
+
+      const animate = () => {
+        // Clear
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, state.w, state.h);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(0,255,0,0.05)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < state.w; i += 50) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, state.h);
+          ctx.stroke();
+        }
+        for (let i = 0; i < state.h; i += 50) {
+          ctx.beginPath();
+          ctx.moveTo(0, i);
+          ctx.lineTo(state.w, i);
+          ctx.stroke();
+        }
+
+        // Update
+        modes[state.mode].update(state);
+        state.particles.forEach(p => p.draw(ctx));
+        state.attractors.forEach(a => a.draw(ctx));
+        updateStats();
+
+        state.time++;
+        if (isRunning) animationId = requestAnimationFrame(animate);
+      };
+
+      // Event handlers
+      document.querySelectorAll('.prf-mode-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.prf-mode-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          switchMode(e.target.dataset.mode);
+        });
+      });
+
+      canvas.addEventListener('click', (e) => {
+        if (state.mode === 'density') {
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          state.attractors.push(new Attractor(x, y, 2));
+        }
+      });
+
+      document.getElementById('prf-reset').addEventListener('click', () => {
+        switchMode(state.mode);
+      });
+
+      const closeHandler = () => {
+        modal.classList.remove('show');
+        isRunning = false;
+        if (animationId) cancelAnimationFrame(animationId);
+        window.terminal.input.focus();
+      };
+
+      document.getElementById('prf-close').addEventListener('click', closeHandler);
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) closeHandler();
+      });
+
+      animate();
     }
   };
-
-  const updateInfo = () => {
-    const modeConfig = modes[mode];
-    info.textContent = modeConfig.desc;
-  };
-
-  const updateStats = () => {
-    const modeStats = {
-      field: `entropy: ${(entropy * 100).toFixed(1)}%`,
-      density: `density: ${(density * 100).toFixed(1)}%`,
-      fragmentation: `fragmentation: ${(fragmentation * 100).toFixed(1)}%`,
-      delay: `delay: ${delay.toFixed(1)} | tech: ${techLevel.toFixed(1)} | ontology: ${ontologyLevel.toFixed(1)}`,
-      amplification: `amplification: ${amplification.toFixed(2)}x | density: ${(density * 100).toFixed(1)}%`,
-      collapse: `entropy: ${(entropy * 100).toFixed(1)}% | fragmentation: ${(fragmentation * 100).toFixed(1)}% | delay: ${delay.toFixed(1)}`
-    };
-    stats.textContent = modeStats[mode] || '';
-  };
-
-  const switchMode = (newMode) => {
-    mode = newMode;
-    modes[mode].init();
-    updateInfo();
-    updateStats();
-  };
-
-  const animate = () => {
-    // Clear canvas
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw grid
-    ctx.strokeStyle = 'rgba(0, 255, 0, 0.05)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < canvas.width; i += 50) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, canvas.height);
-      ctx.stroke();
-    }
-    for (let i = 0; i < canvas.height; i += 50) {
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(canvas.width, i);
-      ctx.stroke();
-    }
-
-    // Update and draw
-    modes[mode].update();
-    particles.forEach(p => p.draw());
-    attractors.forEach(a => a.draw());
-
-    updateStats();
-
-    time++;
-    animationFrameId = requestAnimationFrame(animate);
-  };
-
-  // Event listeners
-  const buttons = document.querySelectorAll('.prf-mode-btn');
-  if (buttons.length === 0) {
-    console.error('Mode buttons not found');
-    visualizerRunning = false;
-    return;
-  }
-  
-  buttons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('.prf-mode-btn').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      switchMode(e.target.dataset.mode);
-    });
-  });
-
-  canvas.addEventListener('click', (e) => {
-    if (mode === 'density') {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      attractors.push(new Attractor(x, y, 2));
-    }
-  });
-
-  document.getElementById('prf-reset').addEventListener('click', () => {
-    switchMode(mode);
-  });
-
-  // Initialize
-  switchMode('field');
-  animate();
-
-  // Modal controls
-  const closeBtn = document.getElementById('prf-close');
-  const closeVisualizerListener = () => {
-    modal.classList.remove('show');
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    visualizerRunning = false;
-    window.terminal.input.focus();
-  };
-  
-  if (closeBtn) closeBtn.addEventListener('click', closeVisualizerListener);
-
-  const escapeListener = (e) => {
-    if (e.key === 'Escape' && modal.classList.contains('show')) {
-      closeVisualizerListener();
-    }
-  };
-  window.addEventListener('keydown', escapeListener);
-};
+})();

@@ -1,14 +1,9 @@
 window.commandHandlers = {
   help: () => `\n[MIRROR OS — COMMAND INDEX]\n\n  help       show this list\n  start      guided entry path (5 readings, sequential)\n  notes      field notes — short transmissions\n  essays     long-form structural analysis\n  about      orientation — what this is and is not\n  field      visualize the probability field (interactive)\n  open <n>   open entry by index (e.g., 'open 3')\n  clear      clear terminal\n  source     credits\n`,
   field: () => {
-    const modal = document.getElementById('visualizer-modal');
-    if (!modal) {
-      return 'ERR: visualizer not available.';
+    if (window.PRF_VISUALIZER) {
+      window.PRF_VISUALIZER.open();
     }
-    modal.classList.add('show');
-    setTimeout(() => {
-      window.initVisualizer();
-    }, 50);
     return '';
   },
   start: () => window.START_CONTENT.index,
