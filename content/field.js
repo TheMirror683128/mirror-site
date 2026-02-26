@@ -11,6 +11,8 @@ window.PRF_VISUALIZER = (() => {
       this.type = type;
       this.age = 0;
       this.decay = Math.random() * 0.02;
+      this.trail = []; // Track motion for trails
+      this.trailMaxLen = 6;
     }
     update(attractors, width, height) {
       this.vx += (Math.random() - 0.5) * 0.1;
@@ -30,6 +32,10 @@ window.PRF_VISUALIZER = (() => {
       this.x += this.vx;
       this.y += this.vy;
 
+      // Add to trail
+      this.trail.push({ x: this.x, y: this.y });
+      if (this.trail.length > this.trailMaxLen) this.trail.shift();
+
       if (this.x < 0) this.x = width;
       if (this.x > width) this.x = 0;
       if (this.y < 0) this.y = height;
@@ -44,6 +50,21 @@ window.PRF_VISUALIZER = (() => {
         case 'fragment': color = `rgba(255,0,0,${alpha*0.6})`; size = 3; break;
         default: color = `rgba(0,255,0,${alpha*0.3})`; size = 2;
       }
+      
+      // Draw trail (motion blur effect)
+      if (this.trail.length > 1) {
+        for (let i = 0; i < this.trail.length - 1; i++) {
+          const trailAlpha = (i / this.trail.length) * alpha * 0.4;
+          ctx.strokeStyle = color.replace(/[\d.]+\)/, `${trailAlpha})`);
+          ctx.lineWidth = size * 0.6;
+          ctx.beginPath();
+          ctx.moveTo(this.trail[i].x, this.trail[i].y);
+          ctx.lineTo(this.trail[i + 1].x, this.trail[i + 1].y);
+          ctx.stroke();
+        }
+      }
+      
+      // Draw particle
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
@@ -67,15 +88,33 @@ window.PRF_VISUALIZER = (() => {
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
+      
+      // Outer ring glow
+      ctx.strokeStyle = 'rgba(0,255,255,0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Core point
       ctx.strokeStyle = '#0ff';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
       ctx.stroke();
+      
       if (this.label) {
         ctx.fillStyle = '#0ff';
-        ctx.font = '11px Courier New';
-        ctx.fillText(this.label, this.x + 12, this.y + 4);
+        ctx.font = 'bold 13px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        // Draw label above the attractor with subtle background
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        const labelWidth = ctx.measureText(this.label).width;
+        ctx.fillRect(this.x - labelWidth/2 - 4, this.y - 18, labelWidth + 8, 14);
+        ctx.fillStyle = '#0ff';
+        ctx.fillText(this.label, this.x, this.y - 6);
+        ctx.textAlign = 'left';
       }
     }
   };
@@ -247,8 +286,38 @@ window.PRF_VISUALIZER = (() => {
         attractors: [],
         w: 800,
         h: 500,
-        time: 0
+        time: 0,
+        paused: false,
+        speed: 1.0,
+        gridCanvas: null,
+        gridCtx: null
       };
+
+      // Pre-render grid to offscreen canvas
+      const createGridCanvas = () => {
+        const gridCanvas = document.createElement('canvas');
+        gridCanvas.width = state.w;
+        gridCanvas.height = state.h;
+        const gridCtx = gridCanvas.getContext('2d');
+        
+        gridCtx.strokeStyle = 'rgba(0,255,0,0.05)';
+        gridCtx.lineWidth = 1;
+        for (let i = 0; i < state.w; i += 50) {
+          gridCtx.beginPath();
+          gridCtx.moveTo(i, 0);
+          gridCtx.lineTo(i, state.h);
+          gridCtx.stroke();
+        }
+        for (let i = 0; i < state.h; i += 50) {
+          gridCtx.beginPath();
+          gridCtx.moveTo(0, i);
+          gridCtx.lineTo(state.w, i);
+          gridCtx.stroke();
+        }
+        
+        return gridCanvas;
+      };
+      state.gridCanvas = createGridCanvas();
 
       const resizeCanvas = () => {
         const container = document.getElementById('prf-canvas-container');
@@ -265,6 +334,9 @@ window.PRF_VISUALIZER = (() => {
         // Set CSS display size
         canvas.style.width = w + 'px';
         canvas.style.height = h + 'px';
+        
+        // Recreate grid canvas
+        state.gridCanvas = createGridCanvas();
       };
       resizeCanvas();
       window.addEventListener('resize', resizeCanvas);
@@ -297,26 +369,34 @@ window.PRF_VISUALIZER = (() => {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, state.w, state.h);
 
-        // Grid
-        ctx.strokeStyle = 'rgba(0,255,0,0.05)';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < state.w; i += 50) {
-          ctx.beginPath();
-          ctx.moveTo(i, 0);
-          ctx.lineTo(i, state.h);
-          ctx.stroke();
-        }
-        for (let i = 0; i < state.h; i += 50) {
-          ctx.beginPath();
-          ctx.moveTo(0, i);
-          ctx.lineTo(state.w, i);
-          ctx.stroke();
-        }
+        // Draw grid from pre-rendered canvas
+        ctx.drawImage(state.gridCanvas, 0, 0);
 
-        // Update
-        modes[state.mode].update(state);
+        // Update if not paused
+        if (!state.paused) {
+          // Apply speed multiplier by running updates multiple times or with scaled delta
+          for (let i = 0; i < Math.ceil(state.speed); i++) {
+            modes[state.mode].update(state);
+          }
+        }
+        
         state.particles.forEach(p => p.draw(ctx));
         state.attractors.forEach(a => a.draw(ctx));
+        
+        // Display pause indicator
+        if (state.paused) {
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+          ctx.font = 'bold 16px Courier New';
+          ctx.fillText('[PAUSED]', 20, 30);
+        }
+        
+        // Display speed indicator if not 1.0
+        if (state.speed !== 1.0) {
+          ctx.fillStyle = 'rgba(0, 255, 255, 0.4)';
+          ctx.font = '12px Courier New';
+          ctx.fillText(`speed: ${state.speed.toFixed(1)}x`, 20, 50);
+        }
+        
         updateStats();
 
         state.time++;
@@ -355,6 +435,27 @@ window.PRF_VISUALIZER = (() => {
       document.getElementById('prf-close').addEventListener('click', closeHandler);
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.classList.contains('show')) closeHandler();
+        // Pause/Resume with spacebar
+        if (e.key === ' ' && modal.classList.contains('show')) {
+          e.preventDefault();
+          state.paused = !state.paused;
+        }
+        // Speed controls: +/- keys
+        if (e.key === '+' || e.key === '=') {
+          e.preventDefault();
+          state.speed = Math.min(3.0, state.speed + 0.25);
+        }
+        if (e.key === '-' || e.key === '_') {
+          e.preventDefault();
+          state.speed = Math.max(0.25, state.speed - 0.25);
+        }
+        // Reset speed with 'r'
+        if (e.key === 'r' || e.key === 'R') {
+          if (modal.classList.contains('show')) {
+            e.preventDefault();
+            state.speed = 1.0;
+          }
+        }
       });
 
       animate();
