@@ -79,30 +79,42 @@ window.PRF_VISUALIZER = (() => {
       this.strength = strength;
       this.label = label;
       this.radius = Math.sqrt(strength) * 10;
+      this.collapsedCount = 0; // Track absorbed particles
+      this.maxDisplaySize = 30; // Max visual size
     }
     draw(ctx) {
+      // Draw outer field gradient (larger when more particles collapsed)
+      const fieldStrength = Math.min(this.collapsedCount * 0.05, 1);
       const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-      gradient.addColorStop(0, 'rgba(0,255,255,0.3)');
+      gradient.addColorStop(0, `rgba(0,255,255,${0.2 + fieldStrength * 0.3})`);
       gradient.addColorStop(1, 'rgba(0,255,255,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
       
-      // Outer ring glow
-      ctx.strokeStyle = 'rgba(0,255,255,0.6)';
-      ctx.lineWidth = 1;
+      // Outer ring glow (brighter if attracting particles)
+      ctx.strokeStyle = `rgba(0,255,255,${0.3 + fieldStrength * 0.4})`;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.stroke();
       
-      // Core point
+      // Core point - GROWS as particles collapse
+      const coreSize = Math.min(8 + this.collapsedCount * 0.1, this.maxDisplaySize);
       ctx.strokeStyle = '#0ff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, coreSize, 0, Math.PI * 2);
       ctx.stroke();
       
+      // Inner glow of core (shows mass accumulation)
+      ctx.fillStyle = `rgba(0,255,255,${Math.min(this.collapsedCount * 0.01, 0.5)})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, coreSize - 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Label
       if (this.label) {
         ctx.fillStyle = '#0ff';
         ctx.font = 'bold 13px Courier New';
@@ -115,6 +127,15 @@ window.PRF_VISUALIZER = (() => {
         ctx.fillStyle = '#0ff';
         ctx.fillText(this.label, this.x, this.y - 6);
         ctx.textAlign = 'left';
+      }
+      
+      // Show collapsed particle count (only in density mode)
+      if (this.collapsedCount > 0) {
+        ctx.fillStyle = 'rgba(0,255,200,0.6)';
+        ctx.font = '10px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`+${this.collapsedCount}`, this.x, this.y + coreSize + 8);
       }
     }
   };
@@ -148,18 +169,35 @@ window.PRF_VISUALIZER = (() => {
         }
       },
       update(state) {
+        // Reset collapse counters before update
+        state.attractors.forEach(a => {
+          a.collapsedCount = 0; // Will be recalculated
+        });
+        
         state.particles.forEach(p => {
           p.update(state.attractors, state.w, state.h);
           state.attractors.forEach(a => {
-            if (Math.hypot(p.x - a.x, p.y - a.y) < a.radius * 0.3) p.type = 'collapsed';
+            const dist = Math.hypot(p.x - a.x, p.y - a.y);
+            if (dist < a.radius * 0.3) {
+              p.type = 'collapsed';
+              a.collapsedCount++; // Count collapsed particles
+            }
           });
         });
-        state.particles = state.particles.filter(p => p.age < 1);
+        
+        // Keep collapsed particles longer (they're being absorbed)
+        state.particles = state.particles.filter(p => {
+          if (p.type === 'collapsed') {
+            return p.age < 1.5; // Longer lifetime when collapsed
+          }
+          return p.age < 1;
+        });
+        
         if (Math.random() < 0.2) {
           state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
-      desc: 'Click to create more density points. Potential collapses around mass.'
+      desc: 'Click to create density points. Watch potential collapse and get absorbed. The core grows.'
     },
     fragmentation: {
       init(state) {
@@ -447,7 +485,9 @@ window.PRF_VISUALIZER = (() => {
           const rect = canvas.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
-          state.attractors.push(new Attractor(x, y, 2));
+          // Add new density point with numbered label
+          const newAttractor = new Attractor(x, y, 2.5, `+${state.attractors.length}`);
+          state.attractors.push(newAttractor);
         }
       });
 
