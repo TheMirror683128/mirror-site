@@ -123,25 +123,27 @@ window.PRF_VISUALIZER = (() => {
     field: {
       init(state) {
         state.particles = [];
-        state.attractors = [];
-        for (let i = 0; i < 200; i++) {
+        // Add central attractor to show base density point
+        state.attractors = [new Attractor(state.w / 2, state.h / 2, 1.5, 'Being')];
+        for (let i = 0; i < 250; i++) {
           state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
       update(state) {
         state.particles.forEach(p => p.update(state.attractors, state.w, state.h));
         state.particles = state.particles.filter(p => p.age < 1);
-        if (Math.random() < 0.3) {
+        if (Math.random() < 0.25) {
           state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
-      desc: 'Base state: Probability Field. Particles drift under entropic pressure.'
+      desc: 'Base state: Probability Field around Being. Particles gravitate toward structure.'
     },
     density: {
       init(state) {
         state.particles = [];
-        state.attractors = [];
-        for (let i = 0; i < 300; i++) {
+        // Start with one attractor to show the concept
+        state.attractors = [new Attractor(state.w / 2, state.h / 2, 2.5, 'Density')];
+        for (let i = 0; i < 350; i++) {
           state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
@@ -153,17 +155,21 @@ window.PRF_VISUALIZER = (() => {
           });
         });
         state.particles = state.particles.filter(p => p.age < 1);
+        if (Math.random() < 0.2) {
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
+        }
       },
-      desc: 'Click to create attractors. Watch potential collapse into reality.'
+      desc: 'Click to create more density points. Potential collapses around mass.'
     },
     fragmentation: {
       init(state) {
         state.particles = [];
         state.attractors = [
-          new Attractor(state.w * 0.35, state.h * 0.5, 3, 'A'),
-          new Attractor(state.w * 0.65, state.h * 0.5, 3, 'B')
+          new Attractor(state.w * 0.3, state.h * 0.5, 3.2, 'Narrative-A'),
+          new Attractor(state.w * 0.7, state.h * 0.5, 3.2, 'Narrative-B')
         ];
-        for (let i = 0; i < 300; i++) {
+        // Start more particles to show the split clearly
+        for (let i = 0; i < 400; i++) {
           state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
         }
       },
@@ -172,13 +178,24 @@ window.PRF_VISUALIZER = (() => {
           p.update(state.attractors, state.w, state.h);
           const d0 = Math.hypot(p.x - state.attractors[0].x, p.y - state.attractors[0].y);
           const d1 = Math.hypot(p.x - state.attractors[1].x, p.y - state.attractors[1].y);
-          if (d0 < state.attractors[0].radius * 0.3) p.type = 'collapsed';
-          else if (d1 < state.attractors[1].radius * 0.3) p.type = 'collapsed';
-          else if (d0 < state.attractors[0].radius && d1 < state.attractors[1].radius) p.type = 'fragment';
+          
+          // Particles collapse into nearest attractor
+          if (d0 < state.attractors[0].radius * 0.3) {
+            p.type = 'collapsed';
+          } else if (d1 < state.attractors[1].radius * 0.3) {
+            p.type = 'collapsed';
+          }
+          // Particles stuck between both attractors become fragments
+          else if (d0 < state.attractors[0].radius * 1.2 && d1 < state.attractors[1].radius * 1.2) {
+            p.type = 'fragment';
+          }
         });
         state.particles = state.particles.filter(p => p.age < 1);
+        if (Math.random() < 0.25) {
+          state.particles.push(new Particle(Math.random() * state.w, Math.random() * state.h));
+        }
       },
-      desc: 'Multiple attractors: density split across incompatible basins.'
+      desc: 'Two incompatible basins. Potential splits; mid-space becomes waste (red fragments).'
     },
     delay: {
       init(state) {
@@ -300,15 +317,23 @@ window.PRF_VISUALIZER = (() => {
         gridCanvas.height = state.h;
         const gridCtx = gridCanvas.getContext('2d');
         
-        gridCtx.strokeStyle = 'rgba(0,255,0,0.05)';
-        gridCtx.lineWidth = 1;
-        for (let i = 0; i < state.w; i += 50) {
+        // Clear with transparency
+        gridCtx.clearRect(0, 0, state.w, state.h);
+        
+        // Draw grid lines very subtly to avoid flickering
+        gridCtx.strokeStyle = 'rgba(0,255,0,0.03)';
+        gridCtx.lineWidth = 0.5;
+        
+        // Vertical lines
+        for (let i = 0; i <= state.w; i += 60) {
           gridCtx.beginPath();
           gridCtx.moveTo(i, 0);
           gridCtx.lineTo(i, state.h);
           gridCtx.stroke();
         }
-        for (let i = 0; i < state.h; i += 50) {
+        
+        // Horizontal lines
+        for (let i = 0; i <= state.h; i += 60) {
           gridCtx.beginPath();
           gridCtx.moveTo(0, i);
           gridCtx.lineTo(state.w, i);
@@ -365,12 +390,14 @@ window.PRF_VISUALIZER = (() => {
       };
 
       const animate = () => {
-        // Clear
+        // Clear background
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, state.w, state.h);
 
-        // Draw grid from pre-rendered canvas
-        ctx.drawImage(state.gridCanvas, 0, 0);
+        // Draw grid from pre-rendered canvas (only if it exists and matches size)
+        if (state.gridCanvas && state.gridCanvas.width === state.w && state.gridCanvas.height === state.h) {
+          ctx.drawImage(state.gridCanvas, 0, 0);
+        }
 
         // Update if not paused
         if (!state.paused) {
@@ -380,7 +407,10 @@ window.PRF_VISUALIZER = (() => {
           }
         }
         
+        // Draw particles (with trails)
         state.particles.forEach(p => p.draw(ctx));
+        
+        // Draw attractors
         state.attractors.forEach(a => a.draw(ctx));
         
         // Display pause indicator
