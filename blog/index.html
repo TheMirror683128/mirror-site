@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mirror — Blog</title>
+  <link rel="stylesheet" href="../css/terminal.css">
+  <style>
+    .blog-wrapper {
+      max-width: 80ch;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .post-item {
+      border-left: 2px solid #0f0;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      background: rgba(0, 255, 0, 0.01);
+    }
+    .post-item h2 {
+      margin: 0 0 0.5rem 0;
+      color: #0f0;
+    }
+    .post-meta {
+      font-size: 0.85rem;
+      color: #0a0;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body class="crt-on">
+  <div class="blog-wrapper">
+    <h1 style="color: #0f0; border-bottom: 2px solid #0f0; padding-bottom: 1rem;">Mirror Blog — Structural Analysis of World Events</h1>
+    
+    <div id="posts-container">
+      <!-- Posts will be loaded dynamically -->
+      <div class="line">loading posts...</div>
+    </div>
+  </div>
+
+  <script src="blog-loader.js"></script>
+</body>
+</html>
