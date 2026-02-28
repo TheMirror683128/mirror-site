@@ -2,7 +2,7 @@
  * Blog command - displays news-driven blog posts with structural analysis
  */
 
-export async function executeBlog() {
+async function executeBlog() {
   const terminal = document.getElementById('terminal');
   if (!terminal) return;
 
@@ -252,6 +252,8 @@ function formatDate(dateStr) {
 }
 
 // Global function for loading individual posts
+window.executeBlog = executeBlog;
+
 window.loadBlogPost = async function(date, slug) {
   const terminal = document.getElementById('terminal');
   if (!terminal) return;

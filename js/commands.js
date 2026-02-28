@@ -1,5 +1,5 @@
 window.commandHandlers = {
-  help: () => `\n[MIRROR OS — COMMAND INDEX]\n\n  help       show this list\n  start      guided entry path (5 readings, sequential)\n  notes      field notes — short transmissions\n  essays     long-form structural analysis\n  about      orientation — what this is and is not\n  field      visualize the probability field (interactive)\n  open <n>   open entry by index (e.g., 'open 3')\n  clear      clear terminal\n  source     credits\n`,
+  help: () => `\n[MIRROR OS — COMMAND INDEX]\n\n  help       show this list\n  start      guided entry path (5 readings, sequential)\n  notes      field notes — short transmissions\n  essays     long-form structural analysis\n  blog       curated event analysis\n  about      orientation — what this is and is not\n  field      visualize the probability field (interactive)\n  open <n>   open entry by index (e.g., 'open 3')\n  clear      clear terminal\n  source     credits\n`,
   field: () => {
     if (window.PRF_VISUALIZER) {
       window.PRF_VISUALIZER.open();
@@ -9,6 +9,10 @@ window.commandHandlers = {
   start: () => window.START_CONTENT.index,
   notes: () => window.NOTES_CONTENT.index,
   essays: () => window.ESSAYS_CONTENT.index,
+  blog: () => {
+    if (window.executeBlog) window.executeBlog();
+    return "";
+  },
   about: () => window.ABOUT_TEXT,
   source: () => `\n[SOURCE]\nBuilt as a static terminal interface for Mirror.\nPrimary source material: PHILOSOPHY.md + ORIGINAL_CONTEXT.md by @lagonraj\n`,
   clear: () => {
