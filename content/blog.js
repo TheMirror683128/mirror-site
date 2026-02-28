@@ -10,30 +10,15 @@ async function executeBlog() {
 
   try {
     // Load blog index
-    const response = await fetch('/blog/posts/index.json');
+    const response = await fetch('blog/posts/index.json');
     
     let posts = [];
     if (response.ok) {
       const index = await response.json();
       posts = index.posts || [];
     } else {
-      // Fallback: list some known posts
-      posts = [
-        {
-          date: '2026-02-26',
-          slug: 'hungary-s-orb-n-stakes-his-reelection-on-anti-ukra',
-          title: "Hungary's Orbán stakes his reelection on anti-Ukraine message",
-          impactScore: 90,
-          category: 'geopolitical'
-        },
-        {
-          date: '2026-02-26',
-          slug: 'tump-bestows-purple-hearts-medals-of-honor-at-stat',
-          title: 'Trump bestows Purple Hearts, Medals of Honor at State of the Union',
-          impactScore: 60,
-          category: 'geopolitical'
-        }
-      ];
+      // Fallback: no hardcoded posts (avoid dead links)
+      posts = [];
     }
 
     // Render blog listing
@@ -259,7 +244,7 @@ window.loadBlogPost = async function(date, slug) {
   if (!terminal) return;
 
   try {
-    const response = await fetch(`/blog/posts/${date}/${slug}.md`);
+    const response = await fetch(`blog/posts/${date}/${slug}.md`);
     if (!response.ok) {
       terminal.innerHTML = `<div class="line error">Post not found</div>`;
       return;
