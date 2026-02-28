@@ -79,12 +79,13 @@ window.terminal = {
     this.state.idx = this.state.history.length;
 
     const lc = cmd.toLowerCase();
+    const normalized = lc.replace(/^\//, "");
     const isCommandLike =
-      lc === "clear" ||
-      lc === "rm -rf /" ||
-      lc.startsWith("open ") ||
-      ["whoami", "sudo", "exit", "matrix", "rabbit", "ls", "ping"].includes(lc) ||
-      !!window.commandHandlers[lc];
+      normalized === "clear" ||
+      normalized === "rm -rf /" ||
+      normalized.startsWith("open ") ||
+      ["whoami", "sudo", "exit", "matrix", "rabbit", "ls", "ping"].includes(normalized) ||
+      !!window.commandHandlers[normalized];
 
     if (this.state.awaitingEmail) {
       if (isCommandLike) {
@@ -100,7 +101,7 @@ window.terminal = {
       }
     }
 
-    if (lc === "clear") {
+    if (normalized === "clear") {
       this.clear();
       return;
     }
@@ -115,16 +116,16 @@ window.terminal = {
       ping: "PING field.prf: 64 bytes — density=high latency=0ms"
     };
 
-    if (eggs[lc]) {
+    if (eggs[normalized]) {
       await this.animateSwap(async () => {
         this.promptEcho(cmd);
-        await this.streamLine(eggs[lc], "dim");
+        await this.streamLine(eggs[normalized], "dim");
       });
       return;
     }
 
-    if (lc.startsWith("open ")) {
-      const n = lc.split(/\s+/)[1];
+    if (normalized.startsWith("open ")) {
+      const n = normalized.split(/\s+/)[1];
       const out = window.resolveOpen(n);
       await this.animateSwap(async () => {
         this.promptEcho(cmd);
@@ -137,7 +138,7 @@ window.terminal = {
       return;
     }
 
-    if (lc === "rm -rf /") {
+    if (normalized === "rm -rf /") {
       await this.animateSwap(async () => {
         this.promptEcho(cmd);
         await this.streamLine("Nice try. The Field cannot be deleted.", "error");
@@ -145,7 +146,7 @@ window.terminal = {
       return;
     }
 
-    const fn = window.commandHandlers[lc];
+    const fn = window.commandHandlers[normalized];
     await this.animateSwap(async () => {
       this.promptEcho(cmd);
       if (!fn) {
