@@ -1,6 +1,13 @@
 {
   "posts": [
     {
+      "date": "2026-03-01",
+      "slug": "openai-layered-protections-in-pentagon-ai-pact",
+      "title": "OpenAI details layered protections in US defense department pact - Reuters",
+      "impactScore": 82,
+      "category": "institutional"
+    },
+    {
       "date": "2026-02-28",
       "slug": "pakistan-taliban-border-war-tests-regional-order",
       "title": "Pakistani and Afghan forces clash as diplomatic efforts intensify - Reuters",
