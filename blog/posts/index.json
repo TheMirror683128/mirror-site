@@ -1,6 +1,13 @@
 {
   "posts": [
     {
+      "date": "2026-03-02",
+      "slug": "investors-brace-bigger-backlash-middle-east-war",
+      "title": "Investors brace for a bigger backlash from Middle East war - Reuters",
+      "impactScore": 88,
+      "category": "geopolitical"
+    },
+    {
       "date": "2026-03-01",
       "slug": "openai-layered-protections-in-pentagon-ai-pact",
       "title": "OpenAI details layered protections in US defense department pact - Reuters",
@@ -38,14 +45,14 @@
     {
       "date": "2026-02-27",
       "slug": "total-lunar-eclipse-march-2026-live-updates-space",
-      "title": "Total lunar eclipse March 2026 \u2014 Live updates - Space",
+      "title": "Total lunar eclipse March 2026 — Live updates - Space",
       "impactScore": 50,
       "category": "other"
     },
     {
       "date": "2026-02-26",
       "slug": "hungary-s-orb-n-stakes-his-reelection-on-anti-ukra",
-      "title": "Hungary\u2019s Orb\u00e1n stakes his reelection on anti-Ukraine message - AP News",
+      "title": "Hungary’s Orbán stakes his reelection on anti-Ukraine message - AP News",
       "impactScore": 90,
       "category": "geopolitical"
     }
