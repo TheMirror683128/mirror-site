@@ -2,6 +2,13 @@
   "posts": [
     {
       "date": "2026-03-02",
+      "slug": "nvidia-4b-photonics-investment-ai-infrastructure",
+      "title": "Nvidia to invest $4 billion in two photonics companies - CNBC",
+      "impactScore": 78,
+      "category": "technological"
+    },
+    {
+      "date": "2026-03-02",
       "slug": "investors-brace-bigger-backlash-middle-east-war",
       "title": "Investors brace for a bigger backlash from Middle East war - Reuters",
       "impactScore": 88,
